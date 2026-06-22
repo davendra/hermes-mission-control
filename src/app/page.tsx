@@ -28,7 +28,7 @@ export default async function HomePage() {
     <div className="p-8 max-w-[1200px] mx-auto">
       <h1 className="text-[32px] font-semibold tracking-[-0.02em] mb-2">Mission Control</h1>
       <p className="text-[var(--ink-2)] mb-8">
-        Every agent in your OpenClaw stack, at a glance.
+        Every agent in your Hermes stack, at a glance.
       </p>
 
       {empty && (
@@ -42,7 +42,7 @@ export default async function HomePage() {
             <code className="px-1.5 py-0.5 rounded" style={{ background: "#000", color: "var(--accent)" }}>
               npm run seed:demo
             </code>{" "}
-            to populate sample agents, or wire your OpenClaw agents to POST to{" "}
+            to populate sample agents, or wire your Hermes agents to POST to{" "}
             <code className="px-1.5 py-0.5 rounded" style={{ background: "#000" }}>/api/agents/state</code>.
           </div>
         </div>
