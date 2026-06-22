@@ -10,7 +10,7 @@ export default function CalendarPage() {
         className="p-8 rounded-xl text-center text-[var(--ink-3)]"
         style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
       >
-        Coming soon. Tell your OpenClaw agent to build this next.
+        Coming soon. Tell your Hermes agent to build this next.
       </div>
     </div>
   );

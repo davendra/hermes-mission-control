@@ -1,6 +1,6 @@
 # BOOTSTRAP.md
 
-**Audience:** an OpenClaw (or Claude Code) agent the user has pointed at
+**Audience:** a Hermes (or Claude Code) agent the user has pointed at
 this repo to set it up for them. If you're a human reading this, see
 `README.md` instead.
 
@@ -28,7 +28,7 @@ Ask the user in this order:
      the `DATABASE_URL`.
    - "I want local Postgres" -> tell them to run `brew install postgresql`
      (mac) or use `docker run postgres`, then set
-     `DATABASE_URL="postgresql://postgres@localhost:5432/openclaw"`.
+     `DATABASE_URL="postgresql://postgres@localhost:5432/hermes"`.
 3. **Any API keys the dashboard itself needs?** By default it needs none.
    If the user wants the dashboard to call LLMs (for example, to summarize
    agent activity), collect an `OPENROUTER_API_KEY`. Otherwise leave it

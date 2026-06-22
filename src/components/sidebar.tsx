@@ -24,9 +24,9 @@ export function Sidebar() {
           className="w-6 h-6 rounded-md grid place-items-center"
           style={{ background: "var(--accent)", color: "#000" }}
         >
-          O
+          H
         </div>
-        OpenClaw Mission Control
+        Hermes Mission Control
       </div>
       <nav className="flex flex-col gap-0.5">
         {NAV.map((item) => {

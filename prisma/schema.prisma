@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// One row per agent your OpenClaw stack runs. Agents self-report here
+/// One row per agent your Hermes stack runs. Agents self-report here
 /// via POST /api/agents/state. The dashboard reads from this table.
 model AgentState {
   id             String    @id                    // stable id: "content-writer", "trading-bot", etc.

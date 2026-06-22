@@ -6,8 +6,8 @@ import { Sidebar } from "@/components/sidebar";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OpenClaw Mission Control",
-  description: "Web dashboard for running and monitoring your OpenClaw AI agents.",
+  title: "Hermes Mission Control",
+  description: "Web dashboard for running and monitoring your Hermes AI agents.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
