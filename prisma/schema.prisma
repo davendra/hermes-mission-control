@@ -62,3 +62,23 @@ model DataStore {
   data      Json
   updatedAt DateTime @updatedAt
 }
+
+/// A conversation an agent has had, pushed in from the agent's own store
+/// (e.g. Hermes state.db). messages holds the transcript as a JSON array of
+/// { role, content, toolName, tokenCount, timestamp }.
+model AgentSession {
+  id           String    @id                    // "<agentId>:<sourceSessionId>"
+  agentId      String
+  sourceId     String                           // original session id on the agent
+  source       String?                          // cli | telegram | subagent | ...
+  chatType     String?
+  model        String?
+  title        String?
+  messageCount Int       @default(0)
+  costUsd      Float     @default(0)
+  startedAt    DateTime?
+  messages     Json      @default("[]")
+  syncedAt     DateTime  @updatedAt
+
+  @@index([agentId])
+}

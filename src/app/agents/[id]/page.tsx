@@ -33,6 +33,14 @@ export default async function AgentDetailPage({
     .findMany({ where: { agentId: id }, orderBy: { createdAt: "desc" } })
     .catch(() => []);
 
+  const sessions = await prisma.agentSession
+    .findMany({
+      where: { agentId: id },
+      orderBy: [{ startedAt: "desc" }, { syncedAt: "desc" }],
+      take: 25,
+    })
+    .catch(() => []);
+
   const activity: Activity[] = Array.isArray(agent.recentActivity)
     ? (agent.recentActivity as Activity[])
     : [];
@@ -85,6 +93,41 @@ export default async function AgentDetailPage({
           label="Last active"
           value={agent.lastActive ? new Date(agent.lastActive).toLocaleString() : "never"}
         />
+      </div>
+
+      <h2 className="text-[16px] font-semibold mb-3">Conversations</h2>
+      <div className="flex flex-col gap-2 mb-8">
+        {sessions.length === 0 && (
+          <div
+            className="p-4 rounded-xl text-[13px] text-[var(--ink-3)]"
+            style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
+          >
+            No conversations synced yet. The agent pushes these from its own store on a timer.
+          </div>
+        )}
+        {sessions.map((s) => (
+          <Link
+            key={s.id}
+            href={`/agents/${id}/sessions/${encodeURIComponent(s.sourceId)}`}
+            className="p-4 rounded-xl flex items-center gap-4 transition-opacity hover:opacity-90"
+            style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-[14px] truncate">
+                {s.title || "(untitled conversation)"}
+              </div>
+              <div className="text-[12px] text-[var(--ink-3)]">
+                {s.source || "?"}
+                {s.chatType ? `/${s.chatType}` : ""} · {s.messageCount} messages
+                {s.model ? ` · ${s.model}` : ""}
+              </div>
+            </div>
+            <div className="text-right text-[12px] text-[var(--ink-3)]">
+              <div>${(s.costUsd || 0).toFixed(2)}</div>
+              <div>{s.startedAt ? new Date(s.startedAt).toLocaleDateString() : ""}</div>
+            </div>
+          </Link>
+        ))}
       </div>
 
       <h2 className="text-[16px] font-semibold mb-3">Recent activity</h2>
