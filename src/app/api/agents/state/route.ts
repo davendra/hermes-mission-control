@@ -21,7 +21,10 @@ function checkAuth(req: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const agents = await prisma.agentState.findMany({ orderBy: { updatedAt: "desc" } });
   return NextResponse.json({ agents });
 }
