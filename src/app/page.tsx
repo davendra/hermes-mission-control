@@ -63,9 +63,10 @@ export default async function HomePage() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         {s.agents.slice(0, 6).map((a) => (
-          <div
+          <Link
             key={a.id}
-            className="p-4 rounded-xl flex items-center gap-3"
+            href={`/agents/${a.id}`}
+            className="p-4 rounded-xl flex items-center gap-3 transition-opacity hover:opacity-90"
             style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
           >
             <div className="text-2xl">{a.emoji || "🤖"}</div>
@@ -82,7 +83,7 @@ export default async function HomePage() {
               <div>{a.tasksCompleted} tasks</div>
               <div>${(a.totalCost || 0).toFixed(2)}</div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

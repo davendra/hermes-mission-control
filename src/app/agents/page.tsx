@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +47,10 @@ export default async function AgentsPage() {
             {agents.map((a) => (
               <tr key={a.id} className="border-t" style={{ borderColor: "var(--line)" }}>
                 <td className="p-3 font-medium">
-                  <span className="mr-2">{a.emoji || "🤖"}</span>
-                  {a.name}
+                  <Link href={`/agents/${a.id}`} className="hover:text-[var(--accent)]">
+                    <span className="mr-2">{a.emoji || "🤖"}</span>
+                    {a.name}
+                  </Link>
                 </td>
                 <td className="p-3 text-[var(--ink-2)]">{a.role || "-"}</td>
                 <td className="p-3">{a.status}</td>

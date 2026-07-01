@@ -20,6 +20,7 @@ model AgentState {
   totalCost      Float     @default(0)            // cumulative $ spent on API calls
   currentTask   String?                           // what it's doing right now
   recentActivity Json?     @default("[]")         // array of { timestamp, message }
+  dashboardUrl   String?                          // deep-link to the agent's own live console
   updatedAt      DateTime  @updatedAt
 }
 

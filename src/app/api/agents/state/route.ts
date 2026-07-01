@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     totalCost,
     currentTask,
     recentActivity,
+    dashboardUrl,
   } = body || {};
 
   if (!id || !name) {
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
       totalCost: Number.isFinite(totalCost) ? Number(totalCost) : 0,
       currentTask: currentTask ? String(currentTask) : null,
       recentActivity: Array.isArray(recentActivity) ? recentActivity : [],
+      dashboardUrl: dashboardUrl ? String(dashboardUrl) : null,
     },
     update: {
       name: String(name),
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
       ...(Number.isFinite(totalCost) && { totalCost: Number(totalCost) }),
       ...(currentTask !== undefined && { currentTask: currentTask ? String(currentTask) : null }),
       ...(Array.isArray(recentActivity) && { recentActivity }),
+      ...(dashboardUrl !== undefined && { dashboardUrl: dashboardUrl ? String(dashboardUrl) : null }),
     },
   });
 

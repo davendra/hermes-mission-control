@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function MissionsPage() {
-  let missions: Array<{ id: string; agentId: string; title: string; status: string; priority: string; createdAt: Date }> = [];
+  let missions: Array<{ id: string; agentId: string; title: string; status: string; priority: string; result: string | null; createdAt: Date }> = [];
   try {
     missions = await prisma.mission.findMany({ orderBy: { createdAt: "desc" }, take: 50 });
   } catch {}
@@ -18,16 +19,29 @@ export default async function MissionsPage() {
         {missions.map((m) => (
           <div
             key={m.id}
-            className="p-4 rounded-xl flex items-center gap-4"
+            className="p-4 rounded-xl"
             style={{ background: "var(--panel)", border: "1px solid var(--line)" }}
           >
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-[14px]">{m.title}</div>
-              <div className="text-[12px] text-[var(--ink-3)]">
-                {m.agentId} · {m.priority}
+            <div className="flex items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-[14px]">{m.title}</div>
+                <div className="text-[12px] text-[var(--ink-3)]">
+                  <Link href={`/agents/${m.agentId}`} className="hover:text-[var(--accent)]">
+                    {m.agentId}
+                  </Link>{" "}
+                  · {m.priority}
+                </div>
               </div>
+              <div className="text-[12px] text-[var(--ink-2)]">{m.status}</div>
             </div>
-            <div className="text-[12px] text-[var(--ink-2)]">{m.status}</div>
+            {m.result && (
+              <pre
+                className="mt-3 p-3 rounded-lg text-[12px] whitespace-pre-wrap overflow-x-auto"
+                style={{ background: "#000", color: "var(--ink-2)" }}
+              >
+                {m.result}
+              </pre>
+            )}
           </div>
         ))}
         {missions.length === 0 && (
