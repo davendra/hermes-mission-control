@@ -1,127 +1,123 @@
 # Hermes Mission Control
 
-A web dashboard template for running and monitoring your Hermes AI agents.
-Inspired by Max HQ, the mission control that powers everything built by
-[@sharbelxyz](https://x.com/sharbelxyz).
+A web dashboard for running and monitoring a fleet of Hermes AI agents. Each agent
+posts a status heartbeat (and, optionally, its recent conversations) to this app, and
+you get one pane of glass: who's online, what they're doing, what they've cost, their
+missions, the ideas they've surfaced, and full conversation transcripts.
 
-> **Featured in:** "Hermes is 10x Better With This Mission Control Setup"
-> ([@Sharbelxyz on YouTube](https://www.youtube.com/@Sharbelxyz))
+> Started from the Max HQ-style template by [@sharbelxyz](https://x.com/sharbelxyz)
+> and extended with auth, per-agent detail pages, and in-app conversation transcripts.
 
-## What this is
+## What it does
 
-If you're running multiple AI agents (content writer, research analyst,
-trading bot, inbox triage, growth scout…), you quickly end up with a dozen
-terminals, a dozen log files, and no single place that answers:
-
-- Which of my agents are online right now?
-- What is each one doing?
-- How much have they cost me this month?
-- Where are the ideas they queued up for me to review?
-- What's in my missions backlog?
-
-That's what this dashboard is for. Every Hermes agent posts its state to
-one endpoint (`POST /api/agents/state`), and the dashboard shows you the
-entire stack at a glance.
+- **Dashboard** (`/`) — KPIs (agents online, tasks completed, pending missions, ideas to review) plus per-agent cards, all clickable.
+- **Agents** (`/agents`) — table of every agent: status, role, current task, tasks, cost, last active.
+- **Agent detail** (`/agents/[id]`) — stats, recent-activity feed, this agent's missions (with their results), its conversations, and an **"Open live console"** deep-link to the agent's own dashboard.
+- **Transcripts** (`/agents/[id]/sessions/[sid]`) — the actual messages a conversation contained, colour-coded by role (user / assistant / tool).
+- **Missions** (`/missions`) — the work queue, with completed missions' results rendered inline.
+- **Ideas** (`/ideas`) — ideas agents queued up for review.
 
 ## Stack
 
 - **Next.js 16** (App Router, React 19)
-- **Prisma 6** on Postgres (Vercel Postgres / Neon / Supabase / local all work)
+- **Prisma 6** on Postgres — built + deployed on **Neon**; Supabase / Vercel Postgres / local also work
 - **Tailwind CSS v4**
-- No auth layer by default. If you need one, wire up NextAuth after
-  install (see `BOOTSTRAP.md` "What to extend next").
+- **Auth:** HTTP Basic Auth on the UI (middleware) + Bearer-token auth on the API
 
-## Quick start
+## Auth
+
+Two layers, both env-driven:
+
+- **Dashboard UI** — HTTP Basic Auth via `src/middleware.ts`. Set `DASHBOARD_USER` / `DASHBOARD_PASS`. If they're unset the gate is a no-op (convenient for local dev). API routes are exempt from this gate (they use their own token).
+- **API** — every `/api/agents/*` call requires `Authorization: Bearer $INTERNAL_API_SECRET`. `GET /api/health` stays open for uptime monitors.
+
+## API
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /api/agents/state` | Bearer | Upsert one agent's status snapshot (the heartbeat) |
+| `GET /api/agents/state` | Bearer | List all agents |
+| `POST /api/agents/sessions` | Bearer | Push an agent's recent conversations + transcripts |
+| `GET /api/health` | none | `{ ok, db }` for uptime checks |
+
+## Data model (Prisma)
+
+- `AgentState` — one row per agent: `status`, `role`, `currentTask`, `tasksCompleted`, `totalCost`, `recentActivity[]`, and `dashboardUrl` (deep-link to the agent's own console).
+- `Mission` — a unit of work for an agent (`title`, `status`, `priority`, `result`).
+- `Idea` — an idea an agent surfaced for review.
+- `AgentSession` — a conversation, transcript stored as a JSON `messages` array, pushed in from the agent's store.
+- `DataStore` — generic key/value scratch.
+
+## Quick start (local)
 
 ```bash
-# 1. Clone
-git clone https://github.com/sharbelxyz/hermes-mission-control.git
+git clone https://github.com/davendra/hermes-mission-control.git
 cd hermes-mission-control
-
-# 2. Install
 npm install
-
-# 3. Copy env and fill in values
-cp .env.example .env
-# Edit .env - at minimum you need DATABASE_URL and INTERNAL_API_SECRET
-
-# 4. Push schema to your db
-npx prisma db push
-
-# 5. Seed demo agents so the dashboard isn't empty
-npm run seed:demo
-
-# 6. Run it
-npm run dev
+cp .env.example .env      # fill in the vars below
+npx prisma db push        # create the tables
+npm run seed:demo         # optional: sample agents / missions / ideas
+npm run dev               # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Environment variables (`.env.example`):
 
-## Wiring your Hermes agents to it
+| Var | What |
+|---|---|
+| `DATABASE_URL` | Postgres connection string (Neon / Supabase / local) |
+| `INTERNAL_API_SECRET` | Bearer secret agents use for the API — `openssl rand -hex 32` |
+| `DASHBOARD_USER` / `DASHBOARD_PASS` | Basic Auth login for the UI — pass via `openssl rand -base64 18` |
 
-Every agent sends a heartbeat. Minimal Python example:
+## Wiring an agent to it
 
-```python
-import os
-import requests
+**1) Heartbeat** — each agent POSTs its status on a timer:
 
-requests.post(
-    "http://localhost:3000/api/agents/state",
-    headers={"Authorization": f"Bearer {os.environ['INTERNAL_API_SECRET']}"},
-    json={
-        "id": "my-content-agent",
-        "name": "Content Writer",
-        "emoji": "✍️",
-        "role": "Content",
-        "status": "working",
-        "currentTask": "Drafting thread about agent workflows",
-        "tasksCompleted": 42,
-        "totalCost": 3.14,
-    },
-)
+```bash
+curl -X POST "$MC_URL/api/agents/state" \
+  -H "Authorization: Bearer $INTERNAL_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"my-agent","name":"My Agent","status":"working",
+       "currentTask":"drafting a thread","tasksCompleted":42,"totalCost":3.14,
+       "dashboardUrl":"https://my-agent.example.com/login"}'
 ```
 
-Or TypeScript:
+Upserts are partial: fields you omit are left unchanged (a heartbeat that doesn't send
+`tasksCompleted` won't reset it). `status` is one of `online | idle | working | offline | error`.
 
-```ts
-await fetch("http://localhost:3000/api/agents/state", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.INTERNAL_API_SECRET}`,
-  },
-  body: JSON.stringify({
-    id: "my-content-agent",
-    name: "Content Writer",
-    status: "working",
-    currentTask: "Drafting thread about agent workflows",
-    tasksCompleted: 42,
-    totalCost: 3.14,
-  }),
-});
+**2) Conversations (optional)** — push recent sessions so transcripts show up in-app:
+
+```bash
+curl -X POST "$MC_URL/api/agents/sessions" \
+  -H "Authorization: Bearer $INTERNAL_API_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"agentId":"my-agent","sessions":[
+        {"sourceId":"sess-1","source":"telegram","title":"Greeting","messageCount":2,
+         "costUsd":0.42,"startedAt":"2026-07-01T08:00:00Z",
+         "messages":[{"role":"user","content":"hi","timestamp":"2026-07-01T08:00:01Z"},
+                     {"role":"assistant","content":"hey!","timestamp":"2026-07-01T08:00:03Z"}]}]}'
 ```
 
-That's it. The dashboard picks up the update on next refresh.
+A working reference for a real agent — Hermes on a DigitalOcean droplet, reporting via
+two systemd timers (`hermes-report-state.sh` for the heartbeat, `hermes-sync-sessions.py`
+for conversation sync) — lives in the companion **Hermes-DO** repo.
 
-## Customizing
+## Deploy (Vercel + Neon)
 
-This repo is **intentionally minimal** - a dashboard shell with one generic
-agents table. The idea is you send your Hermes agent at this codebase with
-the `BOOTSTRAP.md` file and it extends the dashboard for *your* stack.
+```bash
+vercel link                          # create/link the project
+vercel integration add neon          # provisions Postgres, injects DATABASE_URL
+vercel env add INTERNAL_API_SECRET   # also DASHBOARD_USER / DASHBOARD_PASS (all environments)
+npx prisma db push                   # against the Neon DB
+vercel deploy --prod
+```
 
-Want trading PnL cards? Newsletter analytics? YouTube performance? Wire your
-own agent to fetch it, post to a new route, and render it on a new page. The
-scaffolding is here; the personality is yours.
+`vercel git connect` makes pushes to `main` auto-deploy. The build runs
+`prisma generate && next build`.
 
-See `BOOTSTRAP.md` for the onboarding flow designed for Hermes agents.
-See `CLAUDE.md` for notes if you're editing this with Claude Code.
+## Editing with Claude Code
 
-## Deploying
-
-Tested on Vercel. Push to GitHub, import on Vercel, set the env vars from
-`.env.example`, and you're done. Any Postgres host works - Neon and Vercel
-Postgres are the easiest.
+See `CLAUDE.md`. `BOOTSTRAP.md` has the original template's extension guide.
 
 ## License
 
-MIT. Fork it. Build something wild.
+MIT.
