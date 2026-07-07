@@ -11,14 +11,23 @@ import { NextRequest, NextResponse } from "next/server";
  * own auth: `/api/agents/state` requires `Authorization: Bearer <INTERNAL_API_SECRET>`
  * for both GET and POST, and `/api/health` stays open for uptime monitors.
  *
- * If DASHBOARD_USER / DASHBOARD_PASS are unset, the gate is a no-op so local
- * `npm run dev` isn't locked out.
+ * Fail CLOSED in production: if DASHBOARD_USER / DASHBOARD_PASS are unset, a
+ * production deploy returns 503 rather than silently exposing the whole fleet —
+ * a misconfiguration should be a visible outage, not a data leak. Only local /
+ * dev (NODE_ENV !== "production") gets the unauthenticated pass-through so
+ * `npm run dev` isn't locked out. (Note: Vercel sets NODE_ENV=production for
+ * preview deploys too, so set these vars for the Preview scope as well.)
  */
 export function middleware(req: NextRequest) {
   const user = process.env.DASHBOARD_USER;
   const pass = process.env.DASHBOARD_PASS;
 
-  if (!user || !pass) return NextResponse.next();
+  if (!user || !pass) {
+    if (process.env.NODE_ENV === "production") {
+      return new NextResponse("Dashboard auth not configured", { status: 503 });
+    }
+    return NextResponse.next();
+  }
 
   const header = req.headers.get("authorization") || "";
   if (header.startsWith("Basic ")) {
