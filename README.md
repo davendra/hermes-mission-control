@@ -1,5 +1,7 @@
 # Hermes Mission Control
 
+The Hermes fleet Mission Control dashboard, deployed on Vercel with a Neon Postgres backend.
+
 A web dashboard for running and monitoring a fleet of Hermes AI agents. Each agent
 posts a status heartbeat (and, optionally, its recent conversations) to this app, and
 you get one pane of glass: who's online, what they're doing, what they've cost, their
